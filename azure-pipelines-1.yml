@@ -1,0 +1,34 @@
+trigger:
+- main  # Trigger the pipeline when changes are pushed to the main branch
+
+pool:
+  vmImage: 'ubuntu-latest'  # Use an Ubuntu-based build agent for the pipeline
+
+steps:
+# Step 1: Install JDK 11 (or any version needed for your project)
+- task: UseJavaToolInstaller@0
+  inputs:
+    versionSpec: '11'  # Set to the Java version required by your project
+    jdkArchitecture: 'x64'
+
+# Step 2: Check out the code from the GitHub repository
+- checkout: self  # This ensures the repository code is available for the pipeline
+
+# Step 3: Install Maven and run Maven build (clean, install, test)
+- task: Maven@3
+  inputs:
+    mavenVersionOption: 'Default'  # Use the default Maven version available on the agent
+    mavenPomFile: 'pom.xml'  # Path to your Maven project's pom.xml file
+    goals: 'clean verify'  # Run Maven clean and verify commands (runs tests too)
+    options: '-DskipTests=false'  # Ensure tests are not skipped during the build process
+
+# Step 4: Publish Test Results
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/target/test-*.xml'  # Path to your test result files (from Surefire plugin)
+    testRunTitle: 'Maven Regression Tests'  # Title of the test run in Azure DevOps
+    mergeTestResults: true  # Merge results from different test classes if necessary
+    failTaskOnFailedTests: true  # Fail the task if any tests fail
+
+# Optional: Step 5: Deploy or additional tasks (e.g., build artifacts, deploy, etc.)
+# You can add additional steps here, such as deploying the application, building JAR/WAR files, etc.
